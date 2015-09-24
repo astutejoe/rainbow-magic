@@ -1,0 +1,10 @@
+Pyrit 0.4.0 (C) 2008-2011 Lukas Lueg http://pyrit.googlecode.com
+This code is distributed under the GNU General Public License v3+
+
+Running benchmark (56.8 PMKs/s)... \
+
+Computed 56.84 PMKs/s total.
+#1: 'CPU-Core (x86)': 22.8 PMKs/s (RTT 6.8)
+#2: 'CPU-Core (x86)': 23.1 PMKs/s (RTT 16.3)
+#3: 'CPU-Core (x86)': 23.1 PMKs/s (RTT 8.3)
+#4: 'CPU-Core (x86)': 23.0 PMKs/s (RTT 16.4)
