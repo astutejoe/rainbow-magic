@@ -1,6 +1,4 @@
-#include <openssl/x509.h>
 #include <openssl/evp.h>
-#include <openssl/hmac.h>
 #include <omp.h>
 
  #define IC 4096
