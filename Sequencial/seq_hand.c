@@ -27,14 +27,7 @@ int print_hex(unsigned char *buf, int len)
     return(0);
 }
 
-void hmac(
-                unsigned char *key,
-                int key_length,
-                unsigned char *data,
-                int data_length,
-                unsigned char *digest
-                )
-
+void hmac(unsigned char *key, unsigned char key_length, unsigned char *data, unsigned char data_length, unsigned char *digest)
 {
     unsigned char k0[b];
     unsigned char k0xorIpad[b];
@@ -43,7 +36,7 @@ void hmac(
     unsigned char step8data[b+20];
     int i;
 
-    memset(k0, 0, 64);
+    memset(k0, 0, b);
 
     if (key_length != b)
     {
@@ -61,6 +54,7 @@ void hmac(
     {
         memcpy(k0, key, b);
     }
+
     for (i=0; i<b; i++)
         k0xorIpad[i] = k0[i] ^ ipad;
 
@@ -133,8 +127,8 @@ int main()
 {
   unsigned char *pass = "123456";
   unsigned char *output;
-
-  for (int i = 0; i < 99; i++) {
+  #pragma omp parallel for
+  for (int i = 0; i < 999; i++) {
     output = PBKDF2(pass, 6);
   }
 
