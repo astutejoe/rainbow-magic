@@ -38,7 +38,6 @@ int main()
    // #pragma omp parallel for private(pass)
     for (int i = 0; i < 99; i++)
     {
-    	//pass = itoa(i);
     	PKCS5_PBKDF2_HMAC_SHA1(pass, 8, salt, 4, 4096, 32, buf);
     }
 

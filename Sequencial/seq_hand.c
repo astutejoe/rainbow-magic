@@ -8,6 +8,11 @@
 #define IC 4096
 #define KeyLength 32
 #define SHASIZE 20
+#define MAX_MESSAGE_LENGTH 4096
+
+#define ipad 0x36
+#define opad 0x5c
+#define b 64
 
 unsigned char *salt = "test";
 unsigned char saltLen = 4;
@@ -22,43 +27,61 @@ int print_hex(unsigned char *buf, int len)
     return(0);
 }
 
-void hmac_sha1(const unsigned char *text, int text_len, const unsigned char *key, int key_len, unsigned char *digest)
+void hmac(
+                unsigned char *key,
+                int key_length,
+                unsigned char *data,
+                int data_length,
+                unsigned char *digest
+                )
+
 {
-  SHA_CTX context;
-  unsigned char k_ipad[65];
-  unsigned char k_opad[65];
-  unsigned char tk[20];
+    unsigned char k0[b];
+    unsigned char k0xorIpad[b];
+    unsigned char step7data[b];
+    unsigned char step5data[MAX_MESSAGE_LENGTH+128];
+    unsigned char step8data[b+20];
+    int i;
 
-  if (key_len > 64) {
-    SHA_CTX      tctx;
+    memset(k0, 0, 64);
 
-    SHA1_Init(&tctx);
-    SHA1_Update(&tctx, key, key_len);
-    SHA1_Final(tk, &tctx);
+    if (key_length != b)
+    {
+        if (key_length > b)      
+        {
+            SHA1(key, key_length, digest);
+            memcpy(k0, digest, 20);
+        }
+        else if (key_length < b)
+        {
+            memcpy(k0, key, key_length);
+        }
+    }
+    else
+    {
+        memcpy(k0, key, b);
+    }
+    for (i=0; i<b; i++)
+        k0xorIpad[i] = k0[i] ^ ipad;
 
-    key = tk;
-    key_len = 20;
-  }
+    for (i=0; i<b; i++)
+        step5data[i] = k0xorIpad[i];
 
-  memset( k_ipad, 0, sizeof(k_ipad));
-  memset( k_opad, 0, sizeof(k_opad));
-  memcpy( k_ipad, key, key_len);
-  memcpy( k_opad, key, key_len);
+    for (i=0;i<data_length;i++)
+        step5data[i+b] = data[i];
 
-  for (int i = 0; i < 64; i++) {
-    k_ipad[i] ^= 0x36;
-    k_opad[i] ^= 0x5c;
-  }
+    SHA1(step5data, data_length+b, digest);
 
-  SHA1_Init(&context);
-  SHA1_Update(&context, k_ipad, 64);
-  SHA1_Update(&context, text, text_len);
-  SHA1_Final(digest, &context);
+    for (i=0; i<b; i++)
+        step7data[i] = k0[i] ^ opad;
 
-  SHA1_Init(&context);
-  SHA1_Update(&context, k_opad, 64);
-  SHA1_Update(&context, digest, 20);
-  SHA1_Final(digest, &context);
+    for (i=0;i<b;i++)
+        step8data[i] = step7data[i];
+
+    for (i=0;i<20;i++)
+        step8data[i+b] = digest[i];
+
+    SHA1(step8data, b+20, digest);
 }
 
 char* PBKDF2(unsigned char *password, unsigned char passwordLength)
@@ -66,6 +89,7 @@ char* PBKDF2(unsigned char *password, unsigned char passwordLength)
   unsigned char *key = malloc(32);
 
   unsigned char finalsum[SHASIZE];
+  unsigned char digest[SHASIZE];
 
   unsigned char conc[saltLen + 5];
   memcpy(conc, salt, saltLen);
@@ -74,15 +98,13 @@ char* PBKDF2(unsigned char *password, unsigned char passwordLength)
   conc[saltLen+2] = 0;
   conc[saltLen+3] = 1;
 
-  unsigned char *digest = HMAC(EVP_sha1(), password, passwordLength, conc, saltLen+4, NULL, NULL);
-  //print_hex(digest, SHASIZE);
+  hmac(password, passwordLength, conc, saltLen+4, digest);
 
   memcpy(finalsum, digest, SHASIZE);
 
   for (int j = 0; j < IC-1; j++)
   {
-    //hmac_sha1(password, passwordLength, tmp, SHASIZE, digest);
-    digest = HMAC(EVP_sha1(), password, passwordLength, digest, SHASIZE, NULL, NULL);  
+    hmac(password, passwordLength, digest, SHASIZE, digest);
     for (int i = 0; i < SHASIZE; i++) {
       finalsum[i] ^= digest[i];
     }
@@ -90,16 +112,13 @@ char* PBKDF2(unsigned char *password, unsigned char passwordLength)
   memcpy(key, finalsum, 20);
 
   conc[saltLen+3] = 2;
-  //hmac_sha1(password, passwordLength, conc, saltLen + 4, digest2);
-  digest = HMAC(EVP_sha1(), password, passwordLength, conc, saltLen+4, NULL, NULL);
-  //print_hex(digest, SHASIZE);
+  hmac(password, passwordLength, conc, saltLen+4, digest);
 
   memcpy(finalsum, digest, SHASIZE);
 
   for (int j = 0; j < IC-1; j++)
   {
-    //hmac_sha1(password, passwordLength, tmp, SHASIZE, digest);
-    digest = HMAC(EVP_sha1(), password, passwordLength, digest, SHASIZE, NULL, NULL);  
+    hmac(password, passwordLength, digest, SHASIZE, digest); 
     for (int i = 0; i < SHASIZE; i++) {
       finalsum[i] ^= digest[i];
     }
@@ -114,10 +133,11 @@ int main()
 {
   unsigned char *pass = "123456";
   unsigned char *output;
+
   for (int i = 0; i < 99; i++) {
     output = PBKDF2(pass, 6);
   }
-  //unsigned char *output = PBKDF2(pass, 6);
+
   print_hex(output, 32);
 
   return 0;
