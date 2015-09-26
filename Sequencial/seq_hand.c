@@ -1,5 +1,7 @@
-#include <openssl/evp.h>
 #include <openssl/sha.h>
+#include <openssl/hmac.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <omp.h>
 #include <string.h>
 
@@ -9,18 +11,6 @@
 
 unsigned char *salt = "test";
 unsigned char saltLen = 4;
-
-unsigned char* itoa(int val){
-	
-	static unsigned char buf[32] = {0};
-	
-	int i = 30;
-	
-	for(; val && i ; --i, val /= 10)
-		buf[i] = "0123456789abcdef"[val % 10];
-	
-	return &buf[i+1];
-}
 	
 int print_hex(unsigned char *buf, int len)
 {
@@ -73,77 +63,62 @@ void hmac_sha1(const unsigned char *text, int text_len, const unsigned char *key
 
 char* PBKDF2(unsigned char *password, unsigned char passwordLength)
 {
-   unsigned char *key = malloc(32);
-/*   $output = "";
-    for($i = 1; $i <= 2; $i++) {
-        // $i encoded as 4 bytes, big endian.
-        $last = $salt . pack("N", $i);
-        // first iteration
-        $last = $xorsum = hash_hmac($algorithm, $last, $password, true);
-        // perform the other $count - 1 iterations
-        for ($j = 1; $j < $count; $j++) {
-            $xorsum ^= ($last = hash_hmac($algorithm, $last, $password, true));
-        }
-        $output .= $xorsum;
-    }*/
-  unsigned char finalsum[SHASIZE];
-  unsigned char finalsum2[SHASIZE];
+  unsigned char *key = malloc(32);
 
-  unsigned char digest[SHASIZE];
+  unsigned char finalsum[SHASIZE];
 
   unsigned char conc[saltLen + 5];
   memcpy(conc, salt, saltLen);
-  memcpy(conc + saltLen, "0001", 4);
-  hmac_sha1(password, passwordLength, conc, saltLen + 32, digest);
+  conc[saltLen+0] = 0;
+  conc[saltLen+1] = 0;
+  conc[saltLen+2] = 0;
+  conc[saltLen+3] = 1;
+
+  unsigned char *digest = HMAC(EVP_sha1(), password, passwordLength, conc, saltLen+4, NULL, NULL);
+  //print_hex(digest, SHASIZE);
 
   memcpy(finalsum, digest, SHASIZE);
 
   for (int j = 0; j < IC-1; j++)
   {
-    unsigned char tmp[SHASIZE];
-    memcpy(tmp, digest, SHASIZE);
-    hmac_sha1(password, passwordLength, tmp, SHASIZE, digest);
-    for (int i = 0; i < 20; i++) {
+    //hmac_sha1(password, passwordLength, tmp, SHASIZE, digest);
+    digest = HMAC(EVP_sha1(), password, passwordLength, digest, SHASIZE, NULL, NULL);  
+    for (int i = 0; i < SHASIZE; i++) {
+      finalsum[i] ^= digest[i];
+    }
+  }
+  memcpy(key, finalsum, 20);
+
+  conc[saltLen+3] = 2;
+  //hmac_sha1(password, passwordLength, conc, saltLen + 4, digest2);
+  digest = HMAC(EVP_sha1(), password, passwordLength, conc, saltLen+4, NULL, NULL);
+  //print_hex(digest, SHASIZE);
+
+  memcpy(finalsum, digest, SHASIZE);
+
+  for (int j = 0; j < IC-1; j++)
+  {
+    //hmac_sha1(password, passwordLength, tmp, SHASIZE, digest);
+    digest = HMAC(EVP_sha1(), password, passwordLength, digest, SHASIZE, NULL, NULL);  
+    for (int i = 0; i < SHASIZE; i++) {
       finalsum[i] ^= digest[i];
     }
   }
 
-  unsigned char digest2[SHASIZE];
-
-  memset(conc, 0, saltLen + 5);
-  memcpy(conc, salt, saltLen);
-  memcpy(conc + saltLen, "0002", 4);
-  hmac_sha1(password, passwordLength, conc, saltLen + 32, digest2);
-
-  memcpy(finalsum2, digest2, SHASIZE);
-
-  for (int j = 0; j < IC-1; j++)
-  {
-    unsigned char tmp[SHASIZE];
-    memcpy(tmp, digest2, SHASIZE);
-    hmac_sha1(password, passwordLength, tmp, SHASIZE, digest2);
-    for (int i = 0; i < 20; i++) {
-      finalsum2[i] ^= digest2[i];
-    }
-  }
-
-  memcpy(key, finalsum, 20);
-  memcpy(key+20, finalsum2, 12);
+  memcpy(key+20, finalsum, 12);
 
   return key;
-
 }
 
 int main()
 {
   unsigned char *pass = "123456";
-
-  #pragma omp parallel for
+  unsigned char *output;
   for (int i = 0; i < 999; i++) {
-    unsigned char *output = PBKDF2(pass, 6);
+    output = PBKDF2(pass, 6);
   }
-
-  //print_hex(output, 32);
+  //unsigned char *output = PBKDF2(pass, 6);
+  print_hex(output, 32);
 
   return 0;
 }

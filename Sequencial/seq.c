@@ -27,16 +27,22 @@ int print_hex(unsigned char *buf, int len)
 
 int main()
 {
-    char *pass = itoa(5478214);
+    char *pass = itoa(123456);
     char *salt = "test";
     unsigned char buf[33];
 
-    #pragma omp parallel for private(pass)
+   // PKCS5_PBKDF2_HMAC_SHA1(pass, 8, salt, 4, 4096, 32, buf);
+
+    //print_hex(buf, 32);
+
+   // #pragma omp parallel for private(pass)
     for (int i = 0; i < 999; i++)
     {
-    	pass = itoa(i);
+    	//pass = itoa(i);
     	PKCS5_PBKDF2_HMAC_SHA1(pass, 8, salt, 4, 4096, 32, buf);
     }
+
+    print_hex(buf, 32);
 
     return 0;
 }
