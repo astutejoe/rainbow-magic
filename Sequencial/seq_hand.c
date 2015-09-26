@@ -114,7 +114,7 @@ int main()
 {
   unsigned char *pass = "123456";
   unsigned char *output;
-  for (int i = 0; i < 999; i++) {
+  for (int i = 0; i < 99; i++) {
     output = PBKDF2(pass, 6);
   }
   //unsigned char *output = PBKDF2(pass, 6);
