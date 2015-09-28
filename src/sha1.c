@@ -32,15 +32,15 @@
 
 void sha1_engine(uint32_t state[5], const uint8_t block[64]) {
 	#define SCHEDULE(i)  \
-		temp = schedule[(i - 3) & 0xF] ^ schedule[(i - 8) & 0xF] ^ schedule[(i - 14) & 0xF] ^ schedule[(i - 16) & 0xF];  \
-		schedule[i & 0xF] = temp << 1 | temp >> 31;
+		temp = schedule[(i - 3) & 0xf] ^ schedule[(i - 8) & 0xf] ^ schedule[(i - 14) & 0xf] ^ schedule[(i - 16) & 0xf];  \
+		schedule[i & 0xf] = temp << 1 | temp >> 31;
 	
 	#define LOADSCHEDULE(i)  \
 		schedule[i] =                           \
-			  (uint32_t)block[i * 4 + 0] << 24  \
-			| (uint32_t)block[i * 4 + 1] << 16  \
-			| (uint32_t)block[i * 4 + 2] <<  8  \
-			| (uint32_t)block[i * 4 + 3];
+			  (uint32_t)block[(i << 2) + 0] << 24  \
+			| (uint32_t)block[(i << 2) + 1] << 16  \
+			| (uint32_t)block[(i << 2) + 2] <<  8  \
+			| (uint32_t)block[(i << 2) + 3];
 	
 	#define ROUND0a(a, b, c, d, e, i)  LOADSCHEDULE(i)  ROUNDTAIL(a, b, e, ((b & c) | (~b & d))         , i, 0x5A827999)
 	#define ROUND0b(a, b, c, d, e, i)  SCHEDULE(i)      ROUNDTAIL(a, b, e, ((b & c) | (~b & d))         , i, 0x5A827999)
@@ -152,7 +152,7 @@ unsigned char* sha1(unsigned char* in, unsigned int length)
 {
 	unsigned char* digest = smalloc(20);
 
-	unsigned long originalLength = length * 8;
+	unsigned long originalLength = length << 3;
 
 	unsigned char* tmp = smalloc(length+1);
 	memcpy(tmp, in, length);
@@ -162,13 +162,13 @@ unsigned char* sha1(unsigned char* in, unsigned int length)
 
 	length++;
 
-	if (((56 - length) % 64) % 64 != 0)
+	if (((56 - length) & 63) & 63 != 0)
 	{
-		unsigned int tmplength = length + ((56 - length) % 64) % 64;
+		unsigned int tmplength = length + ((56 - length) & 63) & 63;
 		unsigned char* tmp = smalloc(tmplength);
 		memcpy(tmp, in, length);
 
-		memset(tmp+length, 0, ((56 - length) % 64) % 64);
+		memset(tmp + length, 0, ((56 - length) & 63) & 63);
 
 		in = tmp;
 		length = tmplength;
@@ -177,7 +177,7 @@ unsigned char* sha1(unsigned char* in, unsigned int length)
 	tmp = smalloc(length+8);
 	memcpy(tmp, in, length);
 
-	for(int i=7; i>=0; i--){
+	for(int i = 7; i >= 0; i--){
 		tmp[length+(7-i)] = (originalLength>>(8*i)) & 0xff;
 	}
 
@@ -186,7 +186,7 @@ unsigned char* sha1(unsigned char* in, unsigned int length)
 
 	length += 8;
 
-	unsigned int chunks = length / 64.0;
+	unsigned int chunks = length & ~63;
 
 	uint32_t state[5];
 	state[0] = 0x67452301;
@@ -197,7 +197,7 @@ unsigned char* sha1(unsigned char* in, unsigned int length)
 
 	for (int i = 0; i < chunks; i++) {
 		uint8_t block[64];
-		memcpy(block, (in + 64 * i), 64);
+		memcpy(block, (in + 64*i), 64);
 		sha1_engine(state, block);
 	}
 
