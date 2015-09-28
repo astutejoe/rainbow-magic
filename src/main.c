@@ -16,14 +16,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */ 
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 /**
+ * Wordsize in the dictionary.
+ */
+#define WORDSIZE (8 + 1)
+
+/**
+ * @brief Number of words in the dictionary.
+ */
+#define NWORDS 100000000
+
+/**
  * @brief Network SSID.
  */
-char *ssid = "test";
+const char *ssid = "test";
 
 /**
  * @brief Prints program usage and exits.
@@ -46,7 +57,7 @@ static void readargs(int argc, const char **argv)
 	enum states{
 		STATE_READ_ARG, /* Read argument. */
 		STATE_SET_SSID  /* Set SSID name. */
-	};           */
+	};
 	
 	unsigned state;
 	
@@ -78,20 +89,54 @@ static void readargs(int argc, const char **argv)
 	}
 }
 
-int main(int argc, char **argv)
+/**
+ * @brief Dictionary.
+ */
+struct
 {
-	char *output;
-  
+	char *words;
+	unsigned nwords;
+	unsigned wordsize;
+} dictionary;
+
+/**
+ * @brief Reads dictionary to memory.
+ */
+static void dictionary_create(FILE *file)
+{
+	unsigned i;
+	
+	dictionary.words = malloc(NWORDS*WORDSIZE);
+	assert(dictionary.words != NULL);
+	
+	/* Read dictionary. */
+	i = 0;
 	while (!feof(stdin))
 	{
-		char password[9];
-		
-		fgets(password, sizeof(password), stdin);
-		output = PBKDF2(pass, 6);
-		
-		free(output);
-
+		fgets(&dictionary.words[i + WORDSIZE], WORDSIZE - 1, stdin);
+		i++;
 	}
+}
+
+/**
+ * @brief Destroys dictionary.
+ */
+static void dictionary_destroy(void)
+{
+	free(dictionary.words);
+}
+
+int main(int argc, const char **argv)
+{
+	readargs(argc, argv);
+	
+	dictionary_create(stdin);
+  
+	/* Create rainbow table. */
+	for (unsigned i = 0; i < dictionary.nwords; i++)
+		printf("%s", &dictionary.words[i + WORDSIZE]);
+	
+	dictionary_destroy();
 	
 	return (EXIT_FAILURE);
 }
