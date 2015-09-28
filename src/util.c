@@ -16,28 +16,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */ 
 
-#ifndef RAINBOW_MAGIC_H_
-#define RAINBOW_MAGIC_H_
+#include <stdlib.h>
 
-	#include <stdlib.h>
-
-	/**
-	 * Wordsize in the dictionary.
-	 */
-	#define WORDSIZE (8 + 1)
-
-	/**
-	 * @brief Number of words in the dictionary.
-	 */
-	#define NWORDS 100000000
-
-	/* Forward function definitions. */
-	extern void *smalloc(size_t);
-	extern unsigned char *pbkdf2(unsigned char *, unsigned char);
-	extern unsigned char* sha1(unsigned char* , unsigned int);
+/**
+ * @brief Safe malloc().
+ */
+void *smalloc(size_t n)
+{
+	void *p;
 	
-	/* Forward variable defintions. */
-	extern const char *salt;
-	extern unsigned saltlen;
-
-#endif /* RAINBOW_MAGIC_H_ */
+	p = smalloc(n);
+	assert(p != NULL);
+	
+	return (p);
+}
