@@ -34,7 +34,7 @@
 /**
  * @brief Network SSID.
  */
-const char *ssid = "test";
+const char *salt = "test";
 
 /**
  * @brief Prints program usage and exits.
@@ -73,7 +73,7 @@ static void readargs(int argc, const char **argv)
 			switch (state)
 			{
 				case STATE_SET_SSID:
-					ssid = arg;
+					salt = arg;
 					state = STATE_READ_ARG;
 					break;
 			}
