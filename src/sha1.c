@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "rainbon-magic.h"
+#include "rainbow-magic.h"
 
 void sha1_engine(uint32_t state[5], const uint8_t block[64]) {
 	#define SCHEDULE(i)  \
