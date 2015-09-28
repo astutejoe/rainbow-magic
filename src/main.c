@@ -120,9 +120,8 @@ static void dictionary_create(FILE *file)
 	dictionary.nwords = 0;
 	while (1)
 	{
-		if (fgets(&dictionary.words[dictionary.nwords + WORDSIZE], WORDSIZE, stdin) == NULL)
+		if (fgets(&dictionary.words[dictionary.nwords*WORDSIZE], WORDSIZE, stdin) == NULL)
 			break;
-		fprintf(stderr, "%s\n", &dictionary.words[dictionary.nwords*WORDSIZE]);
 		dictionary.nwords++;
 	}
 }
@@ -133,6 +132,15 @@ static void dictionary_create(FILE *file)
 static void dictionary_destroy(void)
 {
 	free(dictionary.words);
+}
+
+int print_hex(unsigned char *buf, int len)
+{
+    for(int i=0;i<len;i++)
+        printf("%02x",buf[i]);
+    printf("\n");
+
+    return(0);
 }
 
 int main(int argc, const char **argv)
@@ -146,9 +154,9 @@ int main(int argc, const char **argv)
 	{
 		char *digest;
 		
-		//digest = PBKDF2(&dictionary.words[i + WORDSIZE], WORDSIZE - 1);
-		
-		fprintf(stderr, "%s\n", &dictionary.words[i*WORDSIZE]);
+		digest = PBKDF2(&dictionary.words[i*WORDSIZE], WORDSIZE - 1);
+		printf("%s ", &dictionary.words[i*WORDSIZE]);
+		print_hex(digest, 32);
 		
 		free(digest);
 	}
