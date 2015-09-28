@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "rainbow-magic.h"
+
 #define IC 4096
 #define KeyLength 32
 #define SHASIZE 20
@@ -10,9 +12,6 @@
 #define ipad 0x36
 #define opad 0x5c
 #define b 64
-
-extern const char *salt;
-extern unsigned saltlen;
 
 void hmac(unsigned char *key, unsigned char key_length, unsigned char *data, unsigned char data_length, unsigned char *digest)
 {
@@ -65,7 +64,7 @@ void hmac(unsigned char *key, unsigned char key_length, unsigned char *data, uns
     SHA1(step8data, b+20, digest);
 }
 
-char* PBKDF2(unsigned char *password, unsigned char passwordLength)
+char *pbkdf2(unsigned char *password, unsigned char passwordLength)
 {
   unsigned char *key = malloc(32);
 

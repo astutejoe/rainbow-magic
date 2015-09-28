@@ -1,13 +1,13 @@
 /*
- * Copyright (C) 2015 Gabriel G. Garcia <gabriel.antunes.garcia@gmail.com>
- *                    Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ * Copyright (C) 2015 Pedro H. Penna <pedrohenriquepenna@gmail.com>
+ *                    Gabriel G. Garcia <gabriel.antunes.garcia@gmail.com>
  * 
- * This program is free software: you can redistribute it and/or modify
+ * Rainbow Magic is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  * 
- * This program is distributed in the hope that it will be useful,
+ * Rainbow Magic is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -22,17 +22,61 @@
 #include <string.h>
 #include <omp.h>
 
-extern char* PBKDF2(unsigned char *, unsigned char);
+#include "rainbow-magic.h"
+
+/*============================================================================*
+ *                               Dictionary                                   *
+ *============================================================================*/
 
 /**
- * Wordsize in the dictionary.
+ * @brief Dictionary.
  */
-#define WORDSIZE (8 + 1)
+struct
+{
+	char *words;       /**< Words.           */
+	unsigned nwords;   /**< Number of words. */
+	unsigned wordsize; /**< Wordsize.        */
+} dictionary;
 
 /**
- * @brief Number of words in the dictionary.
+ * @brief Reads dictionary to memory.
  */
-#define NWORDS 100000000
+static void dictionary_create(FILE *file)
+{
+	/* Initialize dictionary. */
+	dictionary.words = malloc(NWORDS*WORDSIZE);
+	assert(dictionary.words != NULL);
+	dictionary.nwords = 0;
+	dictionary.wordsize = WORDSIZE;
+	
+	/* Read dictionary. */
+	do
+	{
+		char ch;
+		
+		for (int i = 0; (ch = getc(file)) != '\n'; i++)
+		{
+			if (ch == EOF)
+				return;
+				
+			dictionary.words[dictionary.nwords*WORDSIZE + i] = ch;
+		}
+		
+		dictionary.nwords++;
+	} while (1);
+}
+
+/**
+ * @brief Destroys dictionary.
+ */
+static void dictionary_destroy(void)
+{
+	free(dictionary.words);
+}
+
+/*============================================================================*
+ *                                  Main                                      *
+ *============================================================================*/
 
 /**
  * @brief Network SSID.
@@ -99,50 +143,6 @@ static void readargs(int argc, const char **argv)
 	saltlen = strlen(salt);
 }
 
-/**
- * @brief Dictionary.
- */
-struct
-{
-	char *words;
-	unsigned nwords;
-	unsigned wordsize;
-} dictionary;
-
-/**
- * @brief Reads dictionary to memory.
- */
-static void dictionary_create(FILE *file)
-{
-	dictionary.words = malloc(NWORDS*WORDSIZE);
-	assert(dictionary.words != NULL);
-	
-	/* Read dictionary. */
-	dictionary.nwords = 0;
-	do
-	{
-		char ch;
-		
-		for (int i = 0; (ch = getc(file)) != '\n'; i++)
-		{
-			if (ch == EOF)
-				return;
-				
-			dictionary.words[dictionary.nwords*WORDSIZE + i] = ch;
-		}
-		
-		dictionary.nwords++;
-	} while (1);
-}
-
-/**
- * @brief Destroys dictionary.
- */
-static void dictionary_destroy(void)
-{
-	free(dictionary.words);
-}
-
 int print_hex(unsigned char *buf, int len)
 {
     for(int i=0;i<len;i++)
@@ -167,7 +167,7 @@ int main(int argc, const char **argv)
 	#pragma omp parallel for
 	for (unsigned i = 0; i < dictionary.nwords; i++)
 	{
-		digest[i] = PBKDF2(&dictionary.words[i*WORDSIZE], WORDSIZE - 1);	
+		digest[i] = pbkdf2(&dictionary.words[i*WORDSIZE], WORDSIZE - 1);	
 #ifndef NDEBUG
 		printf("%s ", &dictionary.words[i*WORDSIZE]);
 		print_hex(digest[i], 32);
