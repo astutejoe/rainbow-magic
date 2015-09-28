@@ -113,18 +113,17 @@ struct
  */
 static void dictionary_create(FILE *file)
 {
-	unsigned i;
-	
 	dictionary.words = malloc(NWORDS*WORDSIZE);
 	assert(dictionary.words != NULL);
 	
 	/* Read dictionary. */
-	i = 0;
+	dictionary.nwords = 0;
 	while (1)
 	{
-		if (fgets(&dictionary.words[i + WORDSIZE], WORDSIZE, stdin) == NULL)
+		if (fgets(&dictionary.words[dictionary.nwords + WORDSIZE], WORDSIZE, stdin) == NULL)
 			break;
-		i++;
+		fprintf(stderr, "%s\n", &dictionary.words[dictionary.nwords*WORDSIZE]);
+		dictionary.nwords++;
 	}
 }
 
@@ -147,9 +146,9 @@ int main(int argc, const char **argv)
 	{
 		char *digest;
 		
-		digest = PBKDF2(&dictionary.words[i + WORDSIZE], WORDSIZE - 1);
+		//digest = PBKDF2(&dictionary.words[i + WORDSIZE], WORDSIZE - 1);
 		
-		fprintf(stderr, "%s %s\n", &dictionary.words[i + WORDSIZE], digest);
+		fprintf(stderr, "%s\n", &dictionary.words[i*WORDSIZE]);
 		
 		free(digest);
 	}
