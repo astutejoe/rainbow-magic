@@ -118,12 +118,20 @@ static void dictionary_create(FILE *file)
 	
 	/* Read dictionary. */
 	dictionary.nwords = 0;
-	while (1)
+	do
 	{
-		if (fgets(&dictionary.words[dictionary.nwords*WORDSIZE], WORDSIZE, stdin) == NULL)
-			break;
+		char ch;
+		
+		for (int i = 0; (ch = getc(file)) != '\n'; i++)
+		{
+			if (ch == EOF)
+				return;
+				
+			dictionary.words[dictionary.nwords*WORDSIZE + i] = ch;
+		}
+		
 		dictionary.nwords++;
-	}
+	} while (1);
 }
 
 /**
