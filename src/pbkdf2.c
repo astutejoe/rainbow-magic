@@ -1,4 +1,6 @@
-
+#include <openssl/sha.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define IC 4096
 #define KeyLength 32
@@ -8,6 +10,9 @@
 #define ipad 0x36
 #define opad 0x5c
 #define b 64
+
+unsigned char* salt = "test";
+unsigned char saltLen = 4;
 
 void hmac(unsigned char *key, unsigned char key_length, unsigned char *data, unsigned char data_length, unsigned char *digest)
 {
@@ -103,4 +108,9 @@ char* PBKDF2(unsigned char *password, unsigned char passwordLength)
   memcpy(key+20, finalsum, 12);
 
   return key;
+}
+
+int main()
+{
+	return 0;
 }
