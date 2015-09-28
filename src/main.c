@@ -37,6 +37,11 @@
 const char *salt = "test";
 
 /**
+ * @brief Salt length.
+ */
+unsigned saltlen = 4;
+
+/**
  * @brief Prints program usage and exits.
  */
 static void usage(void)
@@ -87,6 +92,8 @@ static void readargs(int argc, const char **argv)
 		else if (!strcmp(arg, "--ssid"))
 			state = STATE_SET_SSID;
 	}
+	
+	saltlen = strlen(salt);
 }
 
 /**
@@ -113,7 +120,7 @@ static void dictionary_create(FILE *file)
 	i = 0;
 	while (!feof(stdin))
 	{
-		fgets(&dictionary.words[i + WORDSIZE], WORDSIZE - 1, stdin);
+		assert(fgets(&dictionary.words[i + WORDSIZE], WORDSIZE - 1, stdin) != NULL);
 		i++;
 	}
 }

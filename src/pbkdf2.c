@@ -11,8 +11,8 @@
 #define opad 0x5c
 #define b 64
 
-unsigned char* salt = "test";
-unsigned char saltLen = 4;
+extern const char *salt;
+extern unsigned saltlen;
 
 void hmac(unsigned char *key, unsigned char key_length, unsigned char *data, unsigned char data_length, unsigned char *digest)
 {
@@ -72,14 +72,14 @@ char* PBKDF2(unsigned char *password, unsigned char passwordLength)
   unsigned char finalsum[SHASIZE];
   unsigned char digest[SHASIZE];
 
-  unsigned char conc[saltLen + 5];
-  memcpy(conc, salt, saltLen);
-  conc[saltLen+0] = 0;
-  conc[saltLen+1] = 0;
-  conc[saltLen+2] = 0;
-  conc[saltLen+3] = 1;
+  unsigned char conc[saltlen + 5];
+  memcpy(conc, salt, saltlen);
+  conc[saltlen+0] = 0;
+  conc[saltlen+1] = 0;
+  conc[saltlen+2] = 0;
+  conc[saltlen+3] = 1;
 
-  hmac(password, passwordLength, conc, saltLen+4, digest);
+  hmac(password, passwordLength, conc, saltlen+4, digest);
 
   memcpy(finalsum, digest, SHASIZE);
 
@@ -92,8 +92,8 @@ char* PBKDF2(unsigned char *password, unsigned char passwordLength)
   }
   memcpy(key, finalsum, 20);
 
-  conc[saltLen+3] = 2;
-  hmac(password, passwordLength, conc, saltLen+4, digest);
+  conc[saltlen+3] = 2;
+  hmac(password, passwordLength, conc, saltlen+4, digest);
 
   memcpy(finalsum, digest, SHASIZE);
 
@@ -108,9 +108,4 @@ char* PBKDF2(unsigned char *password, unsigned char passwordLength)
   memcpy(key+20, finalsum, 12);
 
   return key;
-}
-
-int main()
-{
-	return 0;
 }

@@ -1,2 +1,5 @@
+
+SRC = main.c pbkdf2.c
+
 all:
-	gcc -fopenmp -std=c99 seq_hand.c -O3 -o hand -lcrypto
+	gcc -fopenmp -std=c99 $(SRC) -O3 -o rainbow-magic -lcrypto
