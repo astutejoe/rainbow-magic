@@ -1,5 +1,14 @@
 
 
+#define IC 4096
+#define KeyLength 32
+#define SHASIZE 20
+#define MAX_MESSAGE_LENGTH 4096
+
+#define ipad 0x36
+#define opad 0x5c
+#define b 64
+
 void hmac(unsigned char *key, unsigned char key_length, unsigned char *data, unsigned char data_length, unsigned char *digest)
 {
     unsigned char k0[b];
