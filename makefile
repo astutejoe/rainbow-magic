@@ -1,0 +1,28 @@
+
+# Directories.
+BINDIR = bin
+SRCDIR = src
+
+# Toolchain.
+CC = gcc
+
+# Toolchain configuration.
+CFLAGS = -fopenmp -std=c99 -O3
+LIBS = -lcrypto
+EXEC = rainbow-magic
+
+SRC = $(wildcard $(SRCDIR)/*.c)
+
+all: release debug
+
+release:
+	mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) -DNDEBUG $(SRC) -o $(BINDIR)/$(EXEC) $(LIBS)
+
+debug:
+	mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) $(SRC) -o $(BINDIR)/$(EXEC).debug $(LIBS)
+
+clean:
+	rm -f $(BINDIR)/$(EXEC)
+	rm -f $(BINDIR)/$(EXEC).debug
