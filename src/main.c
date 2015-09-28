@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <omp.h>
 
 extern char* PBKDF2(unsigned char *, unsigned char);
 
@@ -163,6 +164,7 @@ int main(int argc, const char **argv)
 	dictionary_create(stdin);
   
 	/* Create rainbow table. */
+	#pragma omp parallel for
 	for (unsigned i = 0; i < dictionary.nwords; i++)
 	{
 		digest[i] = PBKDF2(&dictionary.words[i*WORDSIZE], WORDSIZE - 1);	
