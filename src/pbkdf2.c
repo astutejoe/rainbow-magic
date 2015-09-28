@@ -70,7 +70,9 @@ char* PBKDF2(unsigned char *password, unsigned char passwordLength)
   unsigned char *key = malloc(32);
 
   unsigned char finalsum[SHASIZE];
+  unsigned char finalsum2[SHASIZE];
   unsigned char digest[SHASIZE];
+  unsigned char digest2[SHASIZE];
 
   unsigned char conc[saltlen + 5];
   memcpy(conc, salt, saltlen);
@@ -80,32 +82,26 @@ char* PBKDF2(unsigned char *password, unsigned char passwordLength)
   conc[saltlen+3] = 1;
 
   hmac(password, passwordLength, conc, saltlen+4, digest);
-
   memcpy(finalsum, digest, SHASIZE);
+
+  conc[saltlen+3] = 2;
+
+  hmac(password, passwordLength, conc, saltlen+4, digest2);
+  memcpy(finalsum2, digest2, SHASIZE);
 
   for (int j = 0; j < IC-1; j++)
   {
     hmac(password, passwordLength, digest, SHASIZE, digest);
+    hmac(password, passwordLength, digest2, SHASIZE, digest2);
+
     for (int i = 0; i < SHASIZE; i++) {
       finalsum[i] ^= digest[i];
+      finalsum2[i] ^= digest2[i];
     }
   }
+  
   memcpy(key, finalsum, 20);
-
-  conc[saltlen+3] = 2;
-  hmac(password, passwordLength, conc, saltlen+4, digest);
-
-  memcpy(finalsum, digest, SHASIZE);
-
-  for (int j = 0; j < IC-1; j++)
-  {
-    hmac(password, passwordLength, digest, SHASIZE, digest); 
-    for (int i = 0; i < SHASIZE; i++) {
-      finalsum[i] ^= digest[i];
-    }
-  }
-
-  memcpy(key+20, finalsum, 12);
+  memcpy(key+20, finalsum2, 12);
 
   return key;
 }
