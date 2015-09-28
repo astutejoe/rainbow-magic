@@ -28,6 +28,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "rainbon-magic.h"
+
 void sha1_engine(uint32_t state[5], const uint8_t block[64]) {
 	#define SCHEDULE(i)  \
 		temp = schedule[(i - 3) & 0xF] ^ schedule[(i - 8) & 0xF] ^ schedule[(i - 14) & 0xF] ^ schedule[(i - 16) & 0xF];  \
@@ -148,14 +150,14 @@ void sha1_engine(uint32_t state[5], const uint8_t block[64]) {
 
 unsigned char* sha1(unsigned char* in, unsigned int length)
 {
-	unsigned char* digest = malloc(20);
+	unsigned char* digest = smalloc(20);
 
 	unsigned long originalLength = length * 8;
 
-	unsigned char* tmp = malloc(length+1);
+	unsigned char* tmp = smalloc(length+1);
 	memcpy(tmp, in, length);
 	tmp[length] = 0x80;
-	in = malloc(length+1);
+	in = smalloc(length+1);
 	memcpy(in, tmp, length+1);
 
 	length++;
@@ -163,7 +165,7 @@ unsigned char* sha1(unsigned char* in, unsigned int length)
 	if (((56 - length) % 64) % 64 != 0)
 	{
 		unsigned int tmplength = length + ((56 - length) % 64) % 64;
-		unsigned char* tmp = malloc(tmplength);
+		unsigned char* tmp = smalloc(tmplength);
 		memcpy(tmp, in, length);
 
 		memset(tmp+length, 0, ((56 - length) % 64) % 64);
@@ -172,14 +174,14 @@ unsigned char* sha1(unsigned char* in, unsigned int length)
 		length = tmplength;
 	}
 
-	tmp = malloc(length+8);
+	tmp = smalloc(length+8);
 	memcpy(tmp, in, length);
 
 	for(int i=7; i>=0; i--){
 		tmp[length+(7-i)] = (originalLength>>(8*i)) & 0xff;
 	}
 
-	in = malloc(length+8);
+	in = smalloc(length+8);
 	memcpy(in, tmp, length+8);
 
 	length += 8;
