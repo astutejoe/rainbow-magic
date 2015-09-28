@@ -30,7 +30,8 @@
 	#define NWORDS 100000000
 
 	/* Forward function definitions. */
-	extern char *pbkdf2(unsigned char *, unsigned char);
+	extern unsigned char *pbkdf2(unsigned char *, unsigned char);
+	extern unsigned char* sha1(unsigned char* , unsigned int);
 	
 	/* Forward variable defintions. */
 	extern const char *salt;

@@ -51,6 +51,7 @@ void hmac(unsigned char *key, unsigned char key_length, unsigned char *data, uns
         step5data[i+b] = data[i];
 
     SHA1(step5data, data_length+b, digest);
+    //digest = sha1(step5data, data_length+b);
 
     for (i=0; i<b; i++)
         step7data[i] = k0[i] ^ opad;
@@ -64,7 +65,7 @@ void hmac(unsigned char *key, unsigned char key_length, unsigned char *data, uns
     SHA1(step8data, b+20, digest);
 }
 
-char *pbkdf2(unsigned char *password, unsigned char passwordLength)
+unsigned char *pbkdf2(unsigned char *password, unsigned char passwordLength)
 {
   unsigned char *key = malloc(32);
 

@@ -23,9 +23,12 @@
  */
 
 #include <stdint.h>
+#include <math.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 
-
-void sha1_compress(uint32_t state[5], const uint8_t block[64]) {
+void sha1_engine(uint32_t state[5], const uint8_t block[64]) {
 	#define SCHEDULE(i)  \
 		temp = schedule[(i - 3) & 0xF] ^ schedule[(i - 8) & 0xF] ^ schedule[(i - 14) & 0xF] ^ schedule[(i - 16) & 0xF];  \
 		schedule[i & 0xF] = temp << 1 | temp >> 31;
@@ -141,4 +144,83 @@ void sha1_compress(uint32_t state[5], const uint8_t block[64]) {
 	state[2] += c;
 	state[3] += d;
 	state[4] += e;
+}
+
+unsigned char* sha1(unsigned char* in, unsigned int length)
+{
+	unsigned char* digest = malloc(20);
+
+	unsigned long originalLength = length * 8;
+
+	unsigned char* tmp = malloc(length+1);
+	memcpy(tmp, in, length);
+	tmp[length] = 0x80;
+	in = malloc(length+1);
+	memcpy(in, tmp, length+1);
+
+	length++;
+
+	if (((56 - length) % 64) % 64 != 0)
+	{
+		unsigned int tmplength = length + ((56 - length) % 64) % 64;
+		unsigned char* tmp = malloc(tmplength);
+		memcpy(tmp, in, length);
+
+		memset(tmp+length, 0, ((56 - length) % 64) % 64);
+
+		in = tmp;
+		length = tmplength;
+	}
+
+	tmp = malloc(length+8);
+	memcpy(tmp, in, length);
+
+	for(int i=7; i>=0; i--){
+		tmp[length+(7-i)] = (originalLength>>(8*i)) & 0xff;
+	}
+
+	in = malloc(length+8);
+	memcpy(in, tmp, length+8);
+
+	length += 8;
+
+	unsigned int chunks = length / 64.0;
+
+	uint32_t state[5];
+	state[0] = 0x67452301;
+	state[1] = 0xefcdab89;
+	state[2] = 0x98badcfe;
+	state[3] = 0x10325476;
+	state[4] = 0xc3d2e1f0;
+
+	for (int i = 0; i < chunks; i++) {
+		uint8_t block[64];
+		memcpy(block, (in + 64 * i), 64);
+		sha1_engine(state, block);
+	}
+
+    digest[0] = state[0] >> 24;
+    digest[1] = state[0] >> 16;
+    digest[2] = state[0] >> 8;
+    digest[3] = state[0];
+    digest[4] = state[1] >> 24;
+    digest[5] = state[1] >> 16;
+    digest[6] = state[1] >> 8;
+    digest[7] = state[1];
+    digest[8] = state[2] >> 24;
+    digest[9] = state[2] >> 16;
+    digest[10] = state[2] >> 8;
+    digest[11] = state[2];
+    digest[12] = state[3] >> 24;
+    digest[13] = state[3] >> 16;
+    digest[14] = state[3] >> 8;
+    digest[15] = state[3];
+    digest[16] = state[4] >> 24;
+    digest[17] = state[4] >> 16;
+    digest[18] = state[4] >> 8;
+    digest[19] = state[4];
+
+//	printf("%d\n%d\n%d\n%d\n%d\n", state[0], state[1], state[2], state[3], state[4]);
+
+	return digest;
 }

@@ -163,7 +163,6 @@ int main(int argc, const char **argv)
 	
 	dictionary_create(stdin);
   
-	/* Create rainbow table. */
 	#pragma omp parallel for
 	for (unsigned i = 0; i < dictionary.nwords; i++)
 	{
@@ -174,10 +173,16 @@ int main(int argc, const char **argv)
 #endif
 	}
 	
-	/* House keeping. */
 	for (unsigned i = 0; i < dictionary.nwords; i++)
 		free(digest[i]);
 	dictionary_destroy();
 	
 	return (EXIT_FAILURE);
 }
+
+
+/*int main()
+{
+	print_hex(sha1("gabrielgabrielgabrielgabrielgabrielgabrielgabrielgabriel", 56), 20);
+	return 0;
+}*/
