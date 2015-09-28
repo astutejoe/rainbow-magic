@@ -21,6 +21,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+extern char* PBKDF2(unsigned char *, unsigned char);
+
 /**
  * Wordsize in the dictionary.
  */
@@ -118,9 +120,10 @@ static void dictionary_create(FILE *file)
 	
 	/* Read dictionary. */
 	i = 0;
-	while (!feof(stdin))
+	while (1)
 	{
-		assert(fgets(&dictionary.words[i + WORDSIZE], WORDSIZE - 1, stdin) != NULL);
+		if (fgets(&dictionary.words[i + WORDSIZE], WORDSIZE, stdin) == NULL)
+			break;
 		i++;
 	}
 }
@@ -141,7 +144,15 @@ int main(int argc, const char **argv)
   
 	/* Create rainbow table. */
 	for (unsigned i = 0; i < dictionary.nwords; i++)
-		printf("%s", &dictionary.words[i + WORDSIZE]);
+	{
+		char *digest;
+		
+		digest = PBKDF2(&dictionary.words[i + WORDSIZE], WORDSIZE - 1);
+		
+		fprintf(stderr, "%s %s\n", &dictionary.words[i + WORDSIZE], digest);
+		
+		free(digest);
+	}
 	
 	dictionary_destroy();
 	
