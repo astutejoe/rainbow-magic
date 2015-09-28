@@ -153,6 +153,11 @@ int print_hex(unsigned char *buf, int len)
 
 int main(int argc, const char **argv)
 {
+	char **digest;
+	
+	digest = malloc(NWORDS*sizeof(char *));
+	assert(digest != NULL);
+	
 	readargs(argc, argv);
 	
 	dictionary_create(stdin);
@@ -160,15 +165,16 @@ int main(int argc, const char **argv)
 	/* Create rainbow table. */
 	for (unsigned i = 0; i < dictionary.nwords; i++)
 	{
-		char *digest;
-		
-		digest = PBKDF2(&dictionary.words[i*WORDSIZE], WORDSIZE - 1);
+		digest[i] = PBKDF2(&dictionary.words[i*WORDSIZE], WORDSIZE - 1);	
+#ifndef NDEBUG
 		printf("%s ", &dictionary.words[i*WORDSIZE]);
-		print_hex(digest, 32);
-		
-		free(digest);
+		print_hex(digest[i], 32);
+#endif
 	}
 	
+	/* House keeping. */
+	for (unsigned i = 0; i < dictionary.nwords; i++)
+		free(digest[i]);
 	dictionary_destroy();
 	
 	return (EXIT_FAILURE);
