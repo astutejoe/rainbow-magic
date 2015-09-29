@@ -189,7 +189,8 @@ int main(int argc, const char **argv)
 	digest = smalloc(dictionary.nwords*sizeof(char *));
 	
 	dictionary_create(stdin);
-  
+	
+	#pragma omp parallel for
 	for (unsigned i = 0; i < dictionary.nwords; i++)
 	{
 		digest[i] = pbkdf2(&dictionary.words[i*dictionary.wordsize], dictionary.wordsize - 1);	
