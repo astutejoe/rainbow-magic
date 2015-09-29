@@ -146,33 +146,45 @@ void sha1_engine(uint32_t state[5], const uint8_t block[64]) {
 	state[4] += e;
 }
 
+#include <stdio.h>
+
 void sha1(unsigned char* _in, unsigned int length, unsigned char* digest)
 {
 	unsigned long originalLength = length * 8;
 
-	unsigned char* in = malloc(length+1);
-	memcpy(in, _in, length);
-	in[length] = 0x80;
+	unsigned char* in;
 
 	length++;
 
 	if (((56 - length) % 64) != 0)
 	{
-		unsigned int tmplength = length + ((56 - length) % 64);
-		in = realloc(in, tmplength);
+		unsigned int tmplength = length + ((56 - length) % 64) + 8;
+		in = malloc(tmplength);
+		memcpy(in, _in, length-1);
+		in[length-1] = 0x80;
 		memset(in+length, 0, ((56 - length) % 64));
 		length = tmplength;
 	}
-
-	in = realloc(in, length+8);
-
-	for(int i=7; i>=0; i--){
-		in[length+(7-i)] = (originalLength>>(8*i)) & 0xff;
+	else
+	{
+		in = malloc(length+8);
+		memcpy(in, _in, length-1);
+		in[length-1] = 0x80;
+		length += 8;
 	}
 
-	length += 8;
+    for(int i=0;i<length;i++)
+        printf("%02x",in[i]);
+    printf("\n");
 
-	unsigned int chunks = length / 64;
+	for(int i=7; i>=0; i--)
+		in[length-8+(7-i)] = (originalLength>>(8*i)) & 0xff;
+
+    for(int i=0;i<length;i++)
+        printf("%02x",in[i]);
+    printf("\n");
+
+	unsigned int chunks = length >> 6;
 
 	uint32_t state[5];
 	state[0] = 0x67452301;
@@ -233,7 +245,9 @@ void sha1(unsigned char* _in, unsigned int length, unsigned char* digest)
 		in[length+(7-i)] = (originalLength>>(8*i)) & 0xff;
 	}
 
-	length += 8;
+	length += 8;for(int i=0;i<length;i++)
+        printf("%02x",in[i]);
+    printf("\n");
 
 	unsigned int chunks = length / 64;
 
