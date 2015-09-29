@@ -21,21 +21,12 @@
 
 	#include <stdlib.h>
 
-	/**
-	 * Wordsize in the dictionary.
-	 */
-	#define WORDSIZE (8 + 1)
-
-	/**
-	 * @brief Number of words in the dictionary.
-	 */
-	#define NWORDS 10000000
-
 	/* Forward function definitions. */
 	extern void sha1(unsigned char* , unsigned int, unsigned char*);
 	extern void hmac(unsigned char*, unsigned char, unsigned char*, unsigned char, unsigned char*);
 	extern void *smalloc(size_t);
 	extern unsigned char *pbkdf2(unsigned char *, unsigned char);
+	extern void error(const char *);
 	
 	/* Forward variable defintions. */
 	extern const char *salt;

@@ -18,6 +18,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 /**
  * @brief Safe malloc().
@@ -30,4 +31,13 @@ void *smalloc(size_t n)
 	assert(p != NULL);
 	
 	return (p);
+}
+
+/**
+ * @brief Prints an error message and exits.
+ */
+void error(const char *msg)
+{
+	fprintf(stderr, "error: %s\n", msg);
+	exit(EXIT_FAILURE);
 }

@@ -35,8 +35,8 @@ struct
 {
 	char *words;       /**< Words.           */
 	unsigned nwords;   /**< Number of words. */
-	unsigned wordsize; /**< Wordsize.        */
-} dictionary;
+	unsigned wordsize; /**< Word size.       */
+} dictionary = { NULL, 0, 0};
 
 /**
  * @brief Reads dictionary to memory.
@@ -44,25 +44,22 @@ struct
 static void dictionary_create(FILE *file)
 {
 	/* Initialize dictionary. */
-	dictionary.words = malloc(NWORDS*WORDSIZE);
-	dictionary.nwords = 0;
-	dictionary.wordsize = WORDSIZE;
+	dictionary.words = smalloc(dictionary.nwords*dictionary.wordsize);
 	
 	/* Read dictionary. */
-	do
+	for (unsigned i = 0; i < dictionary.nwords; i++)
 	{
 		char ch;
 		
-		for (int i = 0; (ch = getc(file)) != '\n'; i++)
+		/* Read word. */
+		for (int j = 0; (ch = getc(file)) != '\n'; j++)
 		{
 			if (ch == EOF)
 				return;
 				
-			dictionary.words[dictionary.nwords*WORDSIZE + i] = ch;
+			dictionary.words[i*dictionary.wordsize + j] = ch;
 		}
-		
-		dictionary.nwords++;
-	} while (1);
+	}
 }
 
 /**
@@ -94,10 +91,23 @@ static void usage(void)
 {
 	printf("Usage: rainbow-magic [options]\n");
 	printf("Options:\n");
-	printf("  --help\n");
-	printf("  --ssid <name>\n");
+	printf("  --help             Displays this information\n");
+	printf("  --nwords <value>   Number of words in the dictionary\n");
+	printf("  --ssid <name>      Sets SSID name\n");
+	printf("  --wordsize <value> Sets the maximum size of a word\n");
 	
 	exit(EXIT_FAILURE);
+}
+
+/**
+ * @brief Checks program arguments.
+ */
+static void checkargs(void)
+{
+	if (dictionary.nwords == 0)
+		error("invalid number of words");
+	if (dictionary.wordsize == 0)
+		error("invalid word size");
 }
 
 /**
@@ -106,8 +116,10 @@ static void usage(void)
 static void readargs(int argc, const char **argv)
 {
 	enum states{
-		STATE_READ_ARG, /* Read argument. */
-		STATE_SET_SSID  /* Set SSID name. */
+		STATE_READ_ARG,    /* Read argument.                     */
+		STATE_SET_SSID,    /* Set SSID name.                     */
+		STATE_SET_NWORDS,  /* Set number of words.               */
+		STATE_SET_WORDSIZE /* Sets the maximum length of a word. */
 	};
 	
 	unsigned state;
@@ -123,8 +135,19 @@ static void readargs(int argc, const char **argv)
 		{
 			switch (state)
 			{
+				case STATE_SET_NWORDS:
+					sscanf(arg, "%u", &dictionary.nwords);
+					state = STATE_READ_ARG;
+					break;
+					
 				case STATE_SET_SSID:
 					salt = arg;
+					state = STATE_READ_ARG;
+					break;
+					
+				case STATE_SET_WORDSIZE:
+					sscanf(arg, "%u", &dictionary.wordsize);
+					dictionary.wordsize++;
 					state = STATE_READ_ARG;
 					break;
 			}
@@ -135,8 +158,12 @@ static void readargs(int argc, const char **argv)
 		/* Parse command. */
 		if (!strcmp(arg, "--help"))
 			usage();
+		else if (!strcmp(arg, "--nwords"))
+			state = STATE_SET_NWORDS;
 		else if (!strcmp(arg, "--ssid"))
 			state = STATE_SET_SSID;
+		else if (!strcmp(arg, "--wordsize"))
+			state = STATE_SET_WORDSIZE;
 	}
 	
 	saltlen = strlen(salt);
@@ -155,17 +182,19 @@ int main(int argc, const char **argv)
 {
 	char **digest;
 	
-	digest = malloc(NWORDS*sizeof(char *));
-	
+	/* Get program arguments. */
 	readargs(argc, argv);
+	checkargs();
+	
+	digest = smalloc(dictionary.nwords*sizeof(char *));
 	
 	dictionary_create(stdin);
   
 	for (unsigned i = 0; i < dictionary.nwords; i++)
 	{
-		digest[i] = pbkdf2(&dictionary.words[i*WORDSIZE], WORDSIZE - 1);	
+		digest[i] = pbkdf2(&dictionary.words[i*dictionary.wordsize], dictionary.wordsize - 1);	
 #ifndef NDEBUG
-		printf("%s ", &dictionary.words[i*WORDSIZE]);
+		printf("%s ", &dictionary.words[i*dictionary.wordsize]);
 		print_hex(digest[i], 32);
 #endif
 	}
