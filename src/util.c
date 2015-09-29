@@ -27,7 +27,7 @@ void *smalloc(size_t n)
 {
 	void *p;
 	
-	p = smalloc(n);
+	p = malloc(n);
 	assert(p != NULL);
 	
 	return (p);
