@@ -44,8 +44,7 @@ struct
 static void dictionary_create(FILE *file)
 {
 	/* Initialize dictionary. */
-	dictionary.words = malloc(NWORDS*WORDSIZE);
-	assert(dictionary.words != NULL);
+	dictionary.words = smalloc(NWORDS*WORDSIZE);
 	dictionary.nwords = 0;
 	dictionary.wordsize = WORDSIZE;
 	
@@ -156,14 +155,13 @@ int main(int argc, const char **argv)
 {
 	char **digest;
 	
-	digest = malloc(NWORDS*sizeof(char *));
-	assert(digest != NULL);
+	digest = smalloc(NWORDS*sizeof(char *));
 	
 	readargs(argc, argv);
 	
 	dictionary_create(stdin);
   
-	//#pragma omp parallel for
+	#pragma omp parallel for
 	for (unsigned i = 0; i < dictionary.nwords; i++)
 	{
 		digest[i] = pbkdf2(&dictionary.words[i*WORDSIZE], WORDSIZE - 1);	

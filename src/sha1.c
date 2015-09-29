@@ -26,17 +26,19 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "rainbow-magic.h"
+
 void sha1_engine(uint32_t state[5], const uint8_t block[64]) {
 	#define SCHEDULE(i)  \
-		temp = schedule[(i - 3) & 0xF] ^ schedule[(i - 8) & 0xF] ^ schedule[(i - 14) & 0xF] ^ schedule[(i - 16) & 0xF];  \
-		schedule[i & 0xF] = temp << 1 | temp >> 31;
+		temp = schedule[(i - 3) & 0xf] ^ schedule[(i - 8) & 0xf] ^ schedule[(i - 14) & 0xf] ^ schedule[(i - 16) & 0xf];  \
+		schedule[i & 0xf] = temp << 1 | temp >> 31;
 	
 	#define LOADSCHEDULE(i)  \
 		schedule[i] =                           \
-			  (uint32_t)block[i * 4 + 0] << 24  \
-			| (uint32_t)block[i * 4 + 1] << 16  \
-			| (uint32_t)block[i * 4 + 2] <<  8  \
-			| (uint32_t)block[i * 4 + 3];
+			  (uint32_t)block[(i << 2) + 0] << 24  \
+			| (uint32_t)block[(i << 2) + 1] << 16  \
+			| (uint32_t)block[(i << 2) + 2] <<  8  \
+			| (uint32_t)block[(i << 2) + 3];
 	
 	#define ROUND0a(a, b, c, d, e, i)  LOADSCHEDULE(i)  ROUNDTAIL(a, b, e, ((b & c) | (~b & d))         , i, 0x5A827999)
 	#define ROUND0b(a, b, c, d, e, i)  SCHEDULE(i)      ROUNDTAIL(a, b, e, ((b & c) | (~b & d))         , i, 0x5A827999)
@@ -181,7 +183,7 @@ void sha1(unsigned char* _in, unsigned int length, unsigned char* digest)
 
 	for (int i = 0; i < chunks; i++) {
 		uint8_t block[64];
-		memcpy(block, (in + 64 * i), 64);
+		memcpy(block, (in + 64*i), 64);
 		sha1_engine(state, block);
 	}
 
