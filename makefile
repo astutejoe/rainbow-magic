@@ -13,7 +13,7 @@ EXEC = rainbow-magic
 
 SRC = $(wildcard $(SRCDIR)/*.c)
 
-all: release debug
+all: release debug profiling
 
 release:
 	mkdir -p $(BINDIR)
@@ -22,6 +22,10 @@ release:
 debug:
 	mkdir -p $(BINDIR)
 	$(CC) $(CFLAGS) $(SRC) -o $(BINDIR)/$(EXEC).debug $(LIBS)
+
+profiling:
+	mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) -pg -DNDEBUG $(SRC) -o $(BINDIR)/$(EXEC).prof $(LIBS)
 
 clean:
 	rm -f $(BINDIR)/$(EXEC)

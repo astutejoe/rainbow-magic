@@ -29,7 +29,7 @@
 	/**
 	 * @brief Number of words in the dictionary.
 	 */
-	#define NWORDS 100000000
+	#define NWORDS 10000000
 
 	/* Forward function definitions. */
 	extern void sha1(unsigned char* , unsigned int, unsigned char*);

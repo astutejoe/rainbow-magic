@@ -44,7 +44,7 @@ struct
 static void dictionary_create(FILE *file)
 {
 	/* Initialize dictionary. */
-	dictionary.words = smalloc(NWORDS*WORDSIZE);
+	dictionary.words = malloc(NWORDS*WORDSIZE);
 	dictionary.nwords = 0;
 	dictionary.wordsize = WORDSIZE;
 	
@@ -151,17 +151,16 @@ int print_hex(unsigned char *buf, int len)
     return(0);
 }
 
-/*int main(int argc, const char **argv)
+int main(int argc, const char **argv)
 {
 	char **digest;
 	
-	digest = smalloc(NWORDS*sizeof(char *));
+	digest = malloc(NWORDS*sizeof(char *));
 	
 	readargs(argc, argv);
 	
 	dictionary_create(stdin);
   
-	#pragma omp parallel for
 	for (unsigned i = 0; i < dictionary.nwords; i++)
 	{
 		digest[i] = pbkdf2(&dictionary.words[i*WORDSIZE], WORDSIZE - 1);	
@@ -176,12 +175,4 @@ int print_hex(unsigned char *buf, int len)
 	dictionary_destroy();
 	
 	return (EXIT_FAILURE);
-}*/
-
-int main()
-{
-	unsigned char digest[20];
-	sha1("gabriel", 7, digest);
-	print_hex(digest, 20);
-	return 0;
 }
