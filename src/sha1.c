@@ -23,10 +23,8 @@
  */
 
 #include <stdint.h>
-#include <math.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 void sha1_engine(uint32_t state[5], const uint8_t block[64]) {
 	#define SCHEDULE(i)  \
@@ -146,45 +144,33 @@ void sha1_engine(uint32_t state[5], const uint8_t block[64]) {
 	state[4] += e;
 }
 
-unsigned char* sha1(unsigned char* in, unsigned int length)
+void sha1(unsigned char* _in, unsigned int length, unsigned char* digest)
 {
-	unsigned char* digest = malloc(20);
-
 	unsigned long originalLength = length * 8;
 
-	unsigned char* tmp = malloc(length+1);
-	memcpy(tmp, in, length);
-	tmp[length] = 0x80;
-	in = malloc(length+1);
-	memcpy(in, tmp, length+1);
+	unsigned char* in = malloc(length+1);
+	memcpy(in, _in, length);
+	in[length] = 0x80;
 
 	length++;
 
-	if (((56 - length) % 64) % 64 != 0)
+	if (((56 - length) % 64) != 0)
 	{
-		unsigned int tmplength = length + ((56 - length) % 64) % 64;
-		unsigned char* tmp = malloc(tmplength);
-		memcpy(tmp, in, length);
-
-		memset(tmp+length, 0, ((56 - length) % 64) % 64);
-
-		in = tmp;
+		unsigned int tmplength = length + ((56 - length) % 64);
+		in = realloc(in, tmplength);
+		memset(in+length, 0, ((56 - length) % 64));
 		length = tmplength;
 	}
 
-	tmp = malloc(length+8);
-	memcpy(tmp, in, length);
+	in = realloc(in, length+8);
 
 	for(int i=7; i>=0; i--){
-		tmp[length+(7-i)] = (originalLength>>(8*i)) & 0xff;
+		in[length+(7-i)] = (originalLength>>(8*i)) & 0xff;
 	}
-
-	in = malloc(length+8);
-	memcpy(in, tmp, length+8);
 
 	length += 8;
 
-	unsigned int chunks = length / 64.0;
+	unsigned int chunks = length / 64;
 
 	uint32_t state[5];
 	state[0] = 0x67452301;
@@ -219,8 +205,4 @@ unsigned char* sha1(unsigned char* in, unsigned int length)
     digest[17] = state[4] >> 16;
     digest[18] = state[4] >> 8;
     digest[19] = state[4];
-
-//	printf("%d\n%d\n%d\n%d\n%d\n", state[0], state[1], state[2], state[3], state[4]);
-
-	return digest;
 }

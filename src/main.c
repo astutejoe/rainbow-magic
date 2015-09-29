@@ -163,7 +163,7 @@ int main(int argc, const char **argv)
 	
 	dictionary_create(stdin);
   
-	#pragma omp parallel for
+	//#pragma omp parallel for
 	for (unsigned i = 0; i < dictionary.nwords; i++)
 	{
 		digest[i] = pbkdf2(&dictionary.words[i*WORDSIZE], WORDSIZE - 1);	
@@ -179,10 +179,3 @@ int main(int argc, const char **argv)
 	
 	return (EXIT_FAILURE);
 }
-
-
-/*int main()
-{
-	print_hex(sha1("gabrielgabrielgabrielgabrielgabrielgabrielgabrielgabriel", 56), 20);
-	return 0;
-}*/
