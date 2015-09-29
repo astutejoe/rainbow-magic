@@ -189,11 +189,13 @@ int main(int argc, const char **argv)
 	digest = smalloc(dictionary.nwords*sizeof(char *));
 	
 	dictionary_create(stdin);
-	
+
+#ifndef NDEBUG	
 	#pragma omp parallel for
+#endif
 	for (unsigned i = 0; i < dictionary.nwords; i++)
 	{
-		digest[i] = pbkdf2(&dictionary.words[i*dictionary.wordsize], dictionary.wordsize - 1);	
+		digest[i] = pbkdf2(&dictionary.words[i*dictionary.wordsize], dictionary.wordsize - 1);
 #ifndef NDEBUG
 		printf("%s ", &dictionary.words[i*dictionary.wordsize]);
 		print_hex(digest[i], 32);
@@ -204,5 +206,5 @@ int main(int argc, const char **argv)
 		free(digest[i]);
 	dictionary_destroy();
 	
-	return (EXIT_FAILURE);
+	return (EXIT_SUCCESS);
 }
