@@ -151,7 +151,7 @@ int print_hex(unsigned char *buf, int len)
     return(0);
 }
 
-int main(int argc, const char **argv)
+/*int main(int argc, const char **argv)
 {
 	char **digest;
 	
@@ -176,4 +176,12 @@ int main(int argc, const char **argv)
 	dictionary_destroy();
 	
 	return (EXIT_FAILURE);
+}*/
+
+int main()
+{
+	unsigned char digest[20];
+	sha1("gabriel", 7, digest);
+	print_hex(digest, 20);
+	return 0;
 }
