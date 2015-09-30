@@ -190,7 +190,7 @@ int main(int argc, const char **argv)
 	
 	dictionary_create(stdin);
 
-#ifndef NDEBUG	
+#ifdef NDEBUG	
 	#pragma omp parallel for
 #endif
 	for (unsigned i = 0; i < dictionary.nwords; i++)

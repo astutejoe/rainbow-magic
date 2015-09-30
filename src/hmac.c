@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */ 
 
-//#include <openssl/sha.h> //OpenSSL
 #include <stdlib.h>
 #include <string.h>
 #include "sha1.h"
@@ -43,8 +42,6 @@ void hmac(unsigned char *key, unsigned char key_length, unsigned char *data, uns
     {
         if (key_length > b)      
         {
-            //SHA1(key, key_length, digest); //OpenSSL
-            //sha1(key, key_length, digest); Hand
             blk_SHA_CTX ctx;
             blk_SHA1_Init(&ctx);
             blk_SHA1_Update(&ctx, key, key_length);
@@ -70,9 +67,6 @@ void hmac(unsigned char *key, unsigned char key_length, unsigned char *data, uns
     for (i=0;i<data_length;i++)
         step5data[i+b] = data[i];
 
-    //SHA1(step5data, data_length+b, digest); //OpenSSL
-    //sha1(step5data, data_length+b, digest); Hand
-
     blk_SHA_CTX ctx;
     blk_SHA1_Init(&ctx);
     blk_SHA1_Update(&ctx, step5data, data_length+b);
@@ -86,8 +80,6 @@ void hmac(unsigned char *key, unsigned char key_length, unsigned char *data, uns
 
     for (i=0;i<20;i++)
         step8data[i+b] = digest[i];
-    //SHA1(step8data, b+20, digest); //OpenSSL
-    //sha1(step8data, b+20, digest); Hand
 
     blk_SHA_CTX ctx2;
     blk_SHA1_Init(&ctx2);

@@ -8,7 +8,7 @@ CC = gcc
 
 # Toolchain configuration.
 CFLAGS = -fopenmp -std=c99 -O3
-LIBS = -lcrypto
+LIBS =
 EXEC = rainbow-magic
 
 SRC = $(wildcard $(SRCDIR)/*.c)

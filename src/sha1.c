@@ -1,209 +1,222 @@
-/* 
- * SHA-1 hash in C
- * 
- * Copyright (c) 2014 Project Nayuki
- * http://www.nayuki.io/page/fast-sha1-hash-implementation-in-x86-assembly
- * 
- * (MIT License)
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- * - The above copyright notice and this permission notice shall be included in
- *   all copies or substantial portions of the Software.
- * - The Software is provided "as is", without warranty of any kind, express or
- *   implied, including but not limited to the warranties of merchantability,
- *   fitness for a particular purpose and noninfringement. In no event shall the
- *   authors or copyright holders be liable for any claim, damages or other
- *   liability, whether in an action of contract, tort or otherwise, arising from,
- *   out of or in connection with the Software or the use or other dealings in the
- *   Software.
+/*
+ * Based on the Mozilla SHA1 (see mozilla-sha1/sha1.c),
+ * optimized to do word accesses rather than byte accesses,
+ * and to avoid unnecessary copies into the context array.
  */
 
-#include <stdint.h>
 #include <string.h>
-#include <stdlib.h>
+#include <arpa/inet.h>
 
-#include "rainbow-magic.h"
+#include "sha1.h"
 
-void sha1_engine(uint32_t state[5], const uint8_t block[64]) {
-	#define SCHEDULE(i)  \
-		temp = schedule[(i - 3) & 0xf] ^ schedule[(i - 8) & 0xf] ^ schedule[(i - 14) & 0xf] ^ schedule[(i - 16) & 0xf];  \
-		schedule[i & 0xf] = temp << 1 | temp >> 31;
-	
-	#define LOADSCHEDULE(i)  \
-		schedule[i] =                           \
-			  (uint32_t)block[(i << 2) + 0] << 24  \
-			| (uint32_t)block[(i << 2) + 1] << 16  \
-			| (uint32_t)block[(i << 2) + 2] <<  8  \
-			| (uint32_t)block[(i << 2) + 3];
-	
-	#define ROUND0a(a, b, c, d, e, i)  LOADSCHEDULE(i)  ROUNDTAIL(a, b, e, ((b & c) | (~b & d))         , i, 0x5A827999)
-	#define ROUND0b(a, b, c, d, e, i)  SCHEDULE(i)      ROUNDTAIL(a, b, e, ((b & c) | (~b & d))         , i, 0x5A827999)
-	#define ROUND1(a, b, c, d, e, i)   SCHEDULE(i)      ROUNDTAIL(a, b, e, (b ^ c ^ d)                  , i, 0x6ED9EBA1)
-	#define ROUND2(a, b, c, d, e, i)   SCHEDULE(i)      ROUNDTAIL(a, b, e, ((b & c) ^ (b & d) ^ (c & d)), i, 0x8F1BBCDC)
-	#define ROUND3(a, b, c, d, e, i)   SCHEDULE(i)      ROUNDTAIL(a, b, e, (b ^ c ^ d)                  , i, 0xCA62C1D6)
-	
-	#define ROUNDTAIL(a, b, e, f, i, k)  \
-		e += (a << 5 | a >> 27) + f + UINT32_C(k) + schedule[i & 0xF];  \
-		b = b << 30 | b >> 2;
-	
-	uint32_t a = state[0];
-	uint32_t b = state[1];
-	uint32_t c = state[2];
-	uint32_t d = state[3];
-	uint32_t e = state[4];
-	
-	uint32_t schedule[16];
-	uint32_t temp;
-	ROUND0a(a, b, c, d, e,  0)
-	ROUND0a(e, a, b, c, d,  1)
-	ROUND0a(d, e, a, b, c,  2)
-	ROUND0a(c, d, e, a, b,  3)
-	ROUND0a(b, c, d, e, a,  4)
-	ROUND0a(a, b, c, d, e,  5)
-	ROUND0a(e, a, b, c, d,  6)
-	ROUND0a(d, e, a, b, c,  7)
-	ROUND0a(c, d, e, a, b,  8)
-	ROUND0a(b, c, d, e, a,  9)
-	ROUND0a(a, b, c, d, e, 10)
-	ROUND0a(e, a, b, c, d, 11)
-	ROUND0a(d, e, a, b, c, 12)
-	ROUND0a(c, d, e, a, b, 13)
-	ROUND0a(b, c, d, e, a, 14)
-	ROUND0a(a, b, c, d, e, 15)
-	ROUND0b(e, a, b, c, d, 16)
-	ROUND0b(d, e, a, b, c, 17)
-	ROUND0b(c, d, e, a, b, 18)
-	ROUND0b(b, c, d, e, a, 19)
-	ROUND1(a, b, c, d, e, 20)
-	ROUND1(e, a, b, c, d, 21)
-	ROUND1(d, e, a, b, c, 22)
-	ROUND1(c, d, e, a, b, 23)
-	ROUND1(b, c, d, e, a, 24)
-	ROUND1(a, b, c, d, e, 25)
-	ROUND1(e, a, b, c, d, 26)
-	ROUND1(d, e, a, b, c, 27)
-	ROUND1(c, d, e, a, b, 28)
-	ROUND1(b, c, d, e, a, 29)
-	ROUND1(a, b, c, d, e, 30)
-	ROUND1(e, a, b, c, d, 31)
-	ROUND1(d, e, a, b, c, 32)
-	ROUND1(c, d, e, a, b, 33)
-	ROUND1(b, c, d, e, a, 34)
-	ROUND1(a, b, c, d, e, 35)
-	ROUND1(e, a, b, c, d, 36)
-	ROUND1(d, e, a, b, c, 37)
-	ROUND1(c, d, e, a, b, 38)
-	ROUND1(b, c, d, e, a, 39)
-	ROUND2(a, b, c, d, e, 40)
-	ROUND2(e, a, b, c, d, 41)
-	ROUND2(d, e, a, b, c, 42)
-	ROUND2(c, d, e, a, b, 43)
-	ROUND2(b, c, d, e, a, 44)
-	ROUND2(a, b, c, d, e, 45)
-	ROUND2(e, a, b, c, d, 46)
-	ROUND2(d, e, a, b, c, 47)
-	ROUND2(c, d, e, a, b, 48)
-	ROUND2(b, c, d, e, a, 49)
-	ROUND2(a, b, c, d, e, 50)
-	ROUND2(e, a, b, c, d, 51)
-	ROUND2(d, e, a, b, c, 52)
-	ROUND2(c, d, e, a, b, 53)
-	ROUND2(b, c, d, e, a, 54)
-	ROUND2(a, b, c, d, e, 55)
-	ROUND2(e, a, b, c, d, 56)
-	ROUND2(d, e, a, b, c, 57)
-	ROUND2(c, d, e, a, b, 58)
-	ROUND2(b, c, d, e, a, 59)
-	ROUND3(a, b, c, d, e, 60)
-	ROUND3(e, a, b, c, d, 61)
-	ROUND3(d, e, a, b, c, 62)
-	ROUND3(c, d, e, a, b, 63)
-	ROUND3(b, c, d, e, a, 64)
-	ROUND3(a, b, c, d, e, 65)
-	ROUND3(e, a, b, c, d, 66)
-	ROUND3(d, e, a, b, c, 67)
-	ROUND3(c, d, e, a, b, 68)
-	ROUND3(b, c, d, e, a, 69)
-	ROUND3(a, b, c, d, e, 70)
-	ROUND3(e, a, b, c, d, 71)
-	ROUND3(d, e, a, b, c, 72)
-	ROUND3(c, d, e, a, b, 73)
-	ROUND3(b, c, d, e, a, 74)
-	ROUND3(a, b, c, d, e, 75)
-	ROUND3(e, a, b, c, d, 76)
-	ROUND3(d, e, a, b, c, 77)
-	ROUND3(c, d, e, a, b, 78)
-	ROUND3(b, c, d, e, a, 79)
-	
-	state[0] += a;
-	state[1] += b;
-	state[2] += c;
-	state[3] += d;
-	state[4] += e;
+/* Hash one 64-byte block of data */
+static void blk_SHA1Block(blk_SHA_CTX *ctx, const unsigned int *data);
+
+void blk_SHA1_Init(blk_SHA_CTX *ctx)
+{
+	ctx->size = 0;
+
+	/* Initialize H with the magic constants (see FIPS180 for constants)
+	 */
+	ctx->H[0] = 0x67452301;
+	ctx->H[1] = 0xefcdab89;
+	ctx->H[2] = 0x98badcfe;
+	ctx->H[3] = 0x10325476;
+	ctx->H[4] = 0xc3d2e1f0;
 }
 
-#include <stdio.h>
 
-void sha1(unsigned char* _in, unsigned int length, unsigned char* digest)
+void blk_SHA1_Update(blk_SHA_CTX *ctx, const void *data, unsigned long len)
 {
-	unsigned long originalLength = length * 8;
+	int lenW = ctx->size & 63;
 
-	unsigned char* in;
+	ctx->size += len;
 
-	length++;
-
-	if (((56 - length) % 64) != 0)
-	{
-		unsigned int tmplength = length + ((56 - length) % 64) + 8;
-		in = malloc(tmplength);
-		memcpy(in, _in, length-1);
-		in[length-1] = 0x80;
-		memset(in+length, 0, ((56 - length) % 64));
-		length = tmplength;
+	/* Read the data into W and process blocks as they get full
+	 */
+	if (lenW) {
+		int left = 64 - lenW;
+		if (len < left)
+			left = len;
+		memcpy(lenW + (char *)ctx->W, data, left);
+		lenW = (lenW + left) & 63;
+		len -= left;
+		data += left;
+		if (lenW)
+			return;
+		blk_SHA1Block(ctx, ctx->W);
 	}
-	else
-	{
-		in = malloc(length+8);
-		memcpy(in, _in, length-1);
-		in[length-1] = 0x80;
-		length += 8;
+	while (len >= 64) {
+		blk_SHA1Block(ctx, data);
+		data += 64;
+		len -= 64;
 	}
+	if (len)
+		memcpy(ctx->W, data, len);
+}
 
-	for(int i=7; i>=0; i--)
-		in[length-1-i] = (originalLength>>(8*i)) & 0xff;
 
-	unsigned int chunks = length >> 6;
+void blk_SHA1_Final(unsigned char hashout[20], blk_SHA_CTX *ctx)
+{
+	static const unsigned char pad[64] = { 0x80 };
+	unsigned int padlen[2];
+	int i;
 
-	uint32_t state[5] = {0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0};
+	/* Pad with a binary 1 (ie 0x80), then zeroes, then length
+	 */
+	padlen[0] = htonl(ctx->size >> 29);
+	padlen[1] = htonl(ctx->size << 3);
 
-	for (int i = 0; i < chunks; i++) {
-		sha1_engine(state, (in + 64*i));
-	}
+	i = ctx->size & 63;
+	blk_SHA1_Update(ctx, pad, 1+ (63 & (55 - i)));
+	blk_SHA1_Update(ctx, padlen, 8);
 
-	free(in);
+	/* Output hash
+	 */
+	for (i = 0; i < 5; i++)
+		((unsigned int *)hashout)[i] = htonl(ctx->H[i]);
+}
 
-    digest[0] = state[0] >> 24;
-    digest[1] = state[0] >> 16;
-    digest[2] = state[0] >> 8;
-    digest[3] = state[0];
-    digest[4] = state[1] >> 24;
-    digest[5] = state[1] >> 16;
-    digest[6] = state[1] >> 8;
-    digest[7] = state[1];
-    digest[8] = state[2] >> 24;
-    digest[9] = state[2] >> 16;
-    digest[10] = state[2] >> 8;
-    digest[11] = state[2];
-    digest[12] = state[3] >> 24;
-    digest[13] = state[3] >> 16;
-    digest[14] = state[3] >> 8;
-    digest[15] = state[3];
-    digest[16] = state[4] >> 24;
-    digest[17] = state[4] >> 16;
-    digest[18] = state[4] >> 8;
-    digest[19] = state[4];
+#if defined(__i386__) || defined(__x86_64__)
+
+#define SHA_ASM(op, x, n) ({ unsigned int __res; __asm__(op " %1,%0":"=r" (__res):"i" (n), "0" (x)); __res; })
+#define SHA_ROL(x,n)	SHA_ASM("rol", x, n)
+#define SHA_ROR(x,n)	SHA_ASM("ror", x, n)
+
+#else
+
+#define SHA_ROT(X,l,r)	(((X) << (l)) | ((X) >> (r)))
+#define SHA_ROL(X,n)	SHA_ROT(X,n,32-(n))
+#define SHA_ROR(X,n)	SHA_ROT(X,32-(n),n)
+
+#endif
+
+/* This "rolls" over the 512-bit array */
+#define W(x) (array[(x)&15])
+#define setW(x, val) (*(volatile unsigned int *)&W(x) = (val))
+
+/*
+ * Where do we get the source from? The first 16 iterations get it from
+ * the input data, the next mix it from the 512-bit array.
+ */
+#define SHA_SRC(t) htonl(data[t])
+#define SHA_MIX(t) SHA_ROL(W(t+13) ^ W(t+8) ^ W(t+2) ^ W(t), 1)
+
+#define SHA_ROUND(t, input, fn, constant, A, B, C, D, E) do { \
+	unsigned int TEMP = input(t); setW(t, TEMP); \
+	E += TEMP + SHA_ROL(A,5) + (fn) + (constant); \
+	B = SHA_ROR(B, 2); } while (0)
+
+#define T_0_15(t, A, B, C, D, E)  SHA_ROUND(t, SHA_SRC, (((C^D)&B)^D) , 0x5a827999, A, B, C, D, E )
+#define T_16_19(t, A, B, C, D, E) SHA_ROUND(t, SHA_MIX, (((C^D)&B)^D) , 0x5a827999, A, B, C, D, E )
+#define T_20_39(t, A, B, C, D, E) SHA_ROUND(t, SHA_MIX, (B^C^D) , 0x6ed9eba1, A, B, C, D, E )
+#define T_40_59(t, A, B, C, D, E) SHA_ROUND(t, SHA_MIX, ((B&C)+(D&(B^C))) , 0x8f1bbcdc, A, B, C, D, E )
+#define T_60_79(t, A, B, C, D, E) SHA_ROUND(t, SHA_MIX, (B^C^D) ,  0xca62c1d6, A, B, C, D, E )
+
+static void blk_SHA1Block(blk_SHA_CTX *ctx, const unsigned int *data)
+{
+	unsigned int A,B,C,D,E;
+	unsigned int array[16];
+
+	A = ctx->H[0];
+	B = ctx->H[1];
+	C = ctx->H[2];
+	D = ctx->H[3];
+	E = ctx->H[4];
+
+	/* Round 1 - iterations 0-16 take their input from 'data' */
+	T_0_15( 0, A, B, C, D, E);
+	T_0_15( 1, E, A, B, C, D);
+	T_0_15( 2, D, E, A, B, C);
+	T_0_15( 3, C, D, E, A, B);
+	T_0_15( 4, B, C, D, E, A);
+	T_0_15( 5, A, B, C, D, E);
+	T_0_15( 6, E, A, B, C, D);
+	T_0_15( 7, D, E, A, B, C);
+	T_0_15( 8, C, D, E, A, B);
+	T_0_15( 9, B, C, D, E, A);
+	T_0_15(10, A, B, C, D, E);
+	T_0_15(11, E, A, B, C, D);
+	T_0_15(12, D, E, A, B, C);
+	T_0_15(13, C, D, E, A, B);
+	T_0_15(14, B, C, D, E, A);
+	T_0_15(15, A, B, C, D, E);
+
+	/* Round 1 - tail. Input from 512-bit mixing array */
+	T_16_19(16, E, A, B, C, D);
+	T_16_19(17, D, E, A, B, C);
+	T_16_19(18, C, D, E, A, B);
+	T_16_19(19, B, C, D, E, A);
+
+	/* Round 2 */
+	T_20_39(20, A, B, C, D, E);
+	T_20_39(21, E, A, B, C, D);
+	T_20_39(22, D, E, A, B, C);
+	T_20_39(23, C, D, E, A, B);
+	T_20_39(24, B, C, D, E, A);
+	T_20_39(25, A, B, C, D, E);
+	T_20_39(26, E, A, B, C, D);
+	T_20_39(27, D, E, A, B, C);
+	T_20_39(28, C, D, E, A, B);
+	T_20_39(29, B, C, D, E, A);
+	T_20_39(30, A, B, C, D, E);
+	T_20_39(31, E, A, B, C, D);
+	T_20_39(32, D, E, A, B, C);
+	T_20_39(33, C, D, E, A, B);
+	T_20_39(34, B, C, D, E, A);
+	T_20_39(35, A, B, C, D, E);
+	T_20_39(36, E, A, B, C, D);
+	T_20_39(37, D, E, A, B, C);
+	T_20_39(38, C, D, E, A, B);
+	T_20_39(39, B, C, D, E, A);
+
+	/* Round 3 */
+	T_40_59(40, A, B, C, D, E);
+	T_40_59(41, E, A, B, C, D);
+	T_40_59(42, D, E, A, B, C);
+	T_40_59(43, C, D, E, A, B);
+	T_40_59(44, B, C, D, E, A);
+	T_40_59(45, A, B, C, D, E);
+	T_40_59(46, E, A, B, C, D);
+	T_40_59(47, D, E, A, B, C);
+	T_40_59(48, C, D, E, A, B);
+	T_40_59(49, B, C, D, E, A);
+	T_40_59(50, A, B, C, D, E);
+	T_40_59(51, E, A, B, C, D);
+	T_40_59(52, D, E, A, B, C);
+	T_40_59(53, C, D, E, A, B);
+	T_40_59(54, B, C, D, E, A);
+	T_40_59(55, A, B, C, D, E);
+	T_40_59(56, E, A, B, C, D);
+	T_40_59(57, D, E, A, B, C);
+	T_40_59(58, C, D, E, A, B);
+	T_40_59(59, B, C, D, E, A);
+
+	/* Round 4 */
+	T_60_79(60, A, B, C, D, E);
+	T_60_79(61, E, A, B, C, D);
+	T_60_79(62, D, E, A, B, C);
+	T_60_79(63, C, D, E, A, B);
+	T_60_79(64, B, C, D, E, A);
+	T_60_79(65, A, B, C, D, E);
+	T_60_79(66, E, A, B, C, D);
+	T_60_79(67, D, E, A, B, C);
+	T_60_79(68, C, D, E, A, B);
+	T_60_79(69, B, C, D, E, A);
+	T_60_79(70, A, B, C, D, E);
+	T_60_79(71, E, A, B, C, D);
+	T_60_79(72, D, E, A, B, C);
+	T_60_79(73, C, D, E, A, B);
+	T_60_79(74, B, C, D, E, A);
+	T_60_79(75, A, B, C, D, E);
+	T_60_79(76, E, A, B, C, D);
+	T_60_79(77, D, E, A, B, C);
+	T_60_79(78, C, D, E, A, B);
+	T_60_79(79, B, C, D, E, A);
+
+	ctx->H[0] += A;
+	ctx->H[1] += B;
+	ctx->H[2] += C;
+	ctx->H[3] += D;
+	ctx->H[4] += E;
 }
