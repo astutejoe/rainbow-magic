@@ -184,6 +184,8 @@ void sha1(unsigned char* _in, unsigned int length, unsigned char* digest)
 		sha1_engine(state, (in + 64*i));
 	}
 
+	free(in);
+
     digest[0] = state[0] >> 24;
     digest[1] = state[0] >> 16;
     digest[2] = state[0] >> 8;
