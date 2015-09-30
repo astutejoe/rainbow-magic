@@ -19,6 +19,7 @@
 //#include <openssl/sha.h> //OpenSSL
 #include <stdlib.h>
 #include <string.h>
+#include "sha1.h"
 
 #include "rainbow-magic.h"
 
@@ -43,7 +44,11 @@ void hmac(unsigned char *key, unsigned char key_length, unsigned char *data, uns
         if (key_length > b)      
         {
             //SHA1(key, key_length, digest); //OpenSSL
-            sha1(key, key_length, digest);
+            //sha1(key, key_length, digest); Hand
+            blk_SHA_CTX ctx;
+            blk_SHA1_Init(&ctx);
+            blk_SHA1_Update(&ctx, key, key_length);
+            blk_SHA1_Final(digest, &ctx);
             memcpy(k0, digest, 20);
         }
         else if (key_length < b)
@@ -66,7 +71,12 @@ void hmac(unsigned char *key, unsigned char key_length, unsigned char *data, uns
         step5data[i+b] = data[i];
 
     //SHA1(step5data, data_length+b, digest); //OpenSSL
-    sha1(step5data, data_length+b, digest);
+    //sha1(step5data, data_length+b, digest); Hand
+
+    blk_SHA_CTX ctx;
+    blk_SHA1_Init(&ctx);
+    blk_SHA1_Update(&ctx, step5data, data_length+b);
+    blk_SHA1_Final(digest, &ctx);
 
     for (i=0; i<b; i++)
         step7data[i] = k0[i] ^ opad;
@@ -77,5 +87,10 @@ void hmac(unsigned char *key, unsigned char key_length, unsigned char *data, uns
     for (i=0;i<20;i++)
         step8data[i+b] = digest[i];
     //SHA1(step8data, b+20, digest); //OpenSSL
-    sha1(step8data, b+20, digest);
+    //sha1(step8data, b+20, digest); Hand
+
+    blk_SHA_CTX ctx2;
+    blk_SHA1_Init(&ctx2);
+    blk_SHA1_Update(&ctx2, step8data, b+20);
+    blk_SHA1_Final(digest, &ctx2);
 }
