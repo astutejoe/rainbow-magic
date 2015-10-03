@@ -22,7 +22,6 @@
 	#include <stdlib.h>
 
 	/* Forward function definitions. */
-	extern void sha1(unsigned char* , unsigned int, unsigned char*);
 	extern void hmac(unsigned char*, unsigned char, unsigned char*, unsigned char, unsigned char*);
 	extern void *smalloc(size_t);
 	extern unsigned char *pbkdf2(unsigned char *, unsigned char);
