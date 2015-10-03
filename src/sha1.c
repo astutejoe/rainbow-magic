@@ -12,19 +12,33 @@
 /* Hash one 64-byte block of data */
 static void blk_SHA1Block(blk_SHA_CTX *ctx, const unsigned int *data);
 
-void blk_SHA1_Init(blk_SHA_CTX *ctx)
+void sha1(const void *data, unsigned long len, unsigned char hashout[20])
 {
-	ctx->size = 0;
+	blk_SHA_CTX ctx;
 
-	/* Initialize H with the magic constants (see FIPS180 for constants)
-	 */
-	ctx->H[0] = 0x67452301;
-	ctx->H[1] = 0xefcdab89;
-	ctx->H[2] = 0x98badcfe;
-	ctx->H[3] = 0x10325476;
-	ctx->H[4] = 0xc3d2e1f0;
+    ctx.size = 0;
+	ctx.H[0] = 0x67452301;
+	ctx.H[1] = 0xefcdab89;
+	ctx.H[2] = 0x98badcfe;
+	ctx.H[3] = 0x10325476;
+	ctx.H[4] = 0xc3d2e1f0;
+
+    blk_SHA1_Update(&ctx, data, len);
+    
+    static const unsigned char pad[64] = { 0x80 };
+	unsigned int padlen[2];
+	int i;
+
+	padlen[0] = htonl(ctx.size >> 29);
+	padlen[1] = htonl(ctx.size << 3);
+
+	i = ctx.size & 63;
+	blk_SHA1_Update(&ctx, pad, 1+ (63 & (55 - i)));
+	blk_SHA1_Update(&ctx, padlen, 8);
+
+	for (i = 0; i < 5; i++)
+		((unsigned int *)hashout)[i] = htonl(ctx.H[i]);
 }
-
 
 void blk_SHA1_Update(blk_SHA_CTX *ctx, const void *data, unsigned long len)
 {
@@ -53,28 +67,6 @@ void blk_SHA1_Update(blk_SHA_CTX *ctx, const void *data, unsigned long len)
 	}
 	if (len)
 		memcpy(ctx->W, data, len);
-}
-
-
-void blk_SHA1_Final(unsigned char hashout[20], blk_SHA_CTX *ctx)
-{
-	static const unsigned char pad[64] = { 0x80 };
-	unsigned int padlen[2];
-	int i;
-
-	/* Pad with a binary 1 (ie 0x80), then zeroes, then length
-	 */
-	padlen[0] = htonl(ctx->size >> 29);
-	padlen[1] = htonl(ctx->size << 3);
-
-	i = ctx->size & 63;
-	blk_SHA1_Update(ctx, pad, 1+ (63 & (55 - i)));
-	blk_SHA1_Update(ctx, padlen, 8);
-
-	/* Output hash
-	 */
-	for (i = 0; i < 5; i++)
-		((unsigned int *)hashout)[i] = htonl(ctx->H[i]);
 }
 
 #if defined(__i386__) || defined(__x86_64__)

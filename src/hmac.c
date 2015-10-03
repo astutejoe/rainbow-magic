@@ -42,10 +42,7 @@ void hmac(unsigned char *key, unsigned char key_length, unsigned char *data, uns
     {
         if (key_length > b)      
         {
-            blk_SHA_CTX ctx;
-            blk_SHA1_Init(&ctx);
-            blk_SHA1_Update(&ctx, key, key_length);
-            blk_SHA1_Final(digest, &ctx);
+            sha1(key, key_length, digest);
             memcpy(k0, digest, 20);
         }
         else if (key_length < b)
@@ -67,10 +64,7 @@ void hmac(unsigned char *key, unsigned char key_length, unsigned char *data, uns
     for (i=0;i<data_length;i++)
         step5data[i+b] = data[i];
 
-    blk_SHA_CTX ctx;
-    blk_SHA1_Init(&ctx);
-    blk_SHA1_Update(&ctx, step5data, data_length+b);
-    blk_SHA1_Final(digest, &ctx);
+    sha1(step5data, data_length+b, digest);
 
     for (i=0; i<b; i++)
         step7data[i] = k0[i] ^ opad;
@@ -81,8 +75,5 @@ void hmac(unsigned char *key, unsigned char key_length, unsigned char *data, uns
     for (i=0;i<20;i++)
         step8data[i+b] = digest[i];
 
-    blk_SHA_CTX ctx2;
-    blk_SHA1_Init(&ctx2);
-    blk_SHA1_Update(&ctx2, step8data, b+20);
-    blk_SHA1_Final(digest, &ctx2);
+    sha1(step8data, b+20, digest);
 }
